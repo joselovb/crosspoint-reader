@@ -150,7 +150,9 @@ void TerminalActivity::poll() {
     }
   }
 
-  if (status == 204) return;  // unchanged
+  // Unchanged: 204, or 200 with only the header (what the bridge sends, since the
+  // web emulator's service worker cannot pass a 204 through).
+  if (status == 204 || (status == 200 && received == HEADER_SIZE && frame[0] == 'X' && frame[1] == '4')) return;
   if (valid) {
     if (state != SHOWING) framesSinceFull = config.fullRefreshEvery;  // clear the text screen fully
     state = SHOWING;
