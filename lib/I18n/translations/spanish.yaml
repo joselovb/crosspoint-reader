@@ -660,3 +660,7 @@ STR_KOREADER_CUSTOM_HEADER_1_NAME: "Nombre de la cabecera personalizada 1 de KOR
 STR_KOREADER_CUSTOM_HEADER_1_VALUE: "Valor de la cabecera personalizada 1 de KOReader"
 STR_KOREADER_CUSTOM_HEADER_2_NAME: "Nombre de la cabecera personalizada 2 de KOReader"
 STR_KOREADER_CUSTOM_HEADER_2_VALUE: "Valor de la cabecera personalizada 2 de KOReader"
+STR_X4LAB_TERMINAL: "Terminal"
+STR_X4LAB_CONNECTING: "Conectando al puente..."
+STR_X4LAB_NO_CONFIG: "Falta la configuración de X4 Lab"
+STR_X4LAB_FAILED: "No se puede conectar al puente"
