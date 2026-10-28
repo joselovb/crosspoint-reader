@@ -3,6 +3,8 @@
 #include <Memory.h>
 #include <SecureHttpClient.h>
 
+#include <string>
+
 #include "activities/Activity.h"
 
 // X4 Lab "Terminal": polls the bridge (x4-lab/bridge) for a full-screen 1-bit
@@ -50,6 +52,10 @@ class TerminalActivity final : public Activity {
   freeink::SecureHttpClient http;
 
   bool loadConfig();
+  bool beginRequest(const char* url);
   void poll();
+  void handleInput();
+  void sendKeys(const std::string& query);
+  void openKeyboard();
   void launchWifiSelection();
 };
