@@ -26,6 +26,7 @@ class TerminalActivity final : public Activity {
   static constexpr size_t HEADER_SIZE = 8;
   static constexpr size_t PIXELS_SIZE = 48000;
   static constexpr size_t FRAME_SIZE = HEADER_SIZE + PIXELS_SIZE;
+  static constexpr uint8_t FLAG_WAITING = 1;
   static constexpr uint8_t FLAG_FULL_REFRESH = 2;
 
   enum State { CONNECTING, SHOWING, NO_CONFIG, FAILED };
@@ -37,6 +38,8 @@ class TerminalActivity final : public Activity {
     char orient[12] = "portrait";
     bool tlsVerify = false;
     uint32_t pollMs = 2000;
+    uint32_t idlePollMs = 20000;   // after idleAfterMs with no new frame or input
+    uint32_t idleAfterMs = 180000;
     uint16_t fullRefreshEvery = 20;
   } config;
 
@@ -48,12 +51,15 @@ class TerminalActivity final : public Activity {
   uint16_t framesSinceFull = 0;
   int lastStatus = 0;
   unsigned long lastPollMs = 0;
+  unsigned long lastActiveMs = 0;  // last new frame or user input
+  uint32_t lastInterval = 0;
   bool shouldTearDownWifiOnExit = false;
   freeink::SecureHttpClient http;
 
   bool loadConfig();
   bool beginRequest(const char* url);
   void poll();
+  uint32_t pollInterval() const;
   void handleInput();
   void sendKeys(const std::string& query);
   void openKeyboard();
