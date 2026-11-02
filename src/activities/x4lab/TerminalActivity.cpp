@@ -78,6 +78,8 @@ bool TerminalActivity::loadConfig() {
   snprintf(config.orient, sizeof(config.orient), "%s", doc["orient"] | "portrait");
   config.tlsVerify = strcmp(doc["tls"] | "insecure", "verify") == 0;
   config.pollMs = doc["poll_ms"] | 2000;
+  config.idlePollMs = doc["idle_poll_ms"] | 20000;
+  config.idleAfterMs = (doc["idle_after_s"] | 180) * 1000UL;
   config.fullRefreshEvery = doc["full_refresh_every"] | 20;
   const size_t urlLen = strlen(config.url);
   if (urlLen > 0 && config.url[urlLen - 1] == '/') config.url[urlLen - 1] = '\0';
@@ -85,8 +87,9 @@ bool TerminalActivity::loadConfig() {
     LOG_ERR("X4T", "%s needs url and token", CONFIG_PATH);
     return false;
   }
-  LOG_INF("X4T", "Bridge %s, tls=%s, poll=%ums", config.url, config.tlsVerify ? "verify" : "insecure",
-          static_cast<unsigned>(config.pollMs));
+  LOG_INF("X4T", "Bridge %s, tls=%s, poll=%ums, idle poll=%ums after %us", config.url,
+          config.tlsVerify ? "verify" : "insecure", static_cast<unsigned>(config.pollMs),
+          static_cast<unsigned>(config.idlePollMs), static_cast<unsigned>(config.idleAfterMs / 1000));
   return true;
 }
 
@@ -94,6 +97,7 @@ void TerminalActivity::onEnter() {
   Activity::onEnter();
   state = CONNECTING;
   frameId = -1;
+  lastActiveMs = millis();
 
   if (!loadConfig()) {
     state = NO_CONFIG;
@@ -190,6 +194,7 @@ void TerminalActivity::poll() {
   // web emulator's service worker cannot pass a 204 through).
   if (status == 204 || (status == 200 && received == HEADER_SIZE && frame[0] == 'X' && frame[1] == '4')) return;
   if (valid) {
+    lastActiveMs = millis();
     if (state != SHOWING) framesSinceFull = config.fullRefreshEvery;  // clear the text screen fully
     state = SHOWING;
     requestUpdate();
@@ -259,14 +264,31 @@ void TerminalActivity::handleInput() {
   sendKeys(std::string("k=") + key);
 }
 
+// Slow down while nothing happens, but never while Claude waits for an answer.
+uint32_t TerminalActivity::pollInterval() const {
+  const bool waiting = frameId >= 0 && (frame[3] & FLAG_WAITING);
+  return !waiting && millis() - lastActiveMs >= config.idleAfterMs ? config.idlePollMs : config.pollMs;
+}
+
 void TerminalActivity::loop() {
   if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
     onGoHome();
     return;
   }
   if (state == NO_CONFIG || !frame) return;
+  int x = 0;
+  int y = 0;
+  if (mappedInput.wasAnyPressed() || mappedInput.wasScreenTouchDown(x, y)) {
+    if (pollInterval() != config.pollMs) lastPollMs = 0;  // waking from idle: poll now
+    lastActiveMs = millis();
+  }
   handleInput();
-  if (lastPollMs == 0 || millis() - lastPollMs >= config.pollMs) poll();
+  const uint32_t interval = pollInterval();
+  if (interval != lastInterval) {
+    LOG_DBG("X4T", "Polling every %u ms", static_cast<unsigned>(interval));
+    lastInterval = interval;
+  }
+  if (lastPollMs == 0 || millis() - lastPollMs >= interval) poll();
 }
 
 void TerminalActivity::render(RenderLock&&) {
