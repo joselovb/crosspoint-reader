@@ -278,7 +278,8 @@ void TerminalActivity::loop() {
   if (state == NO_CONFIG || !frame) return;
   int x = 0;
   int y = 0;
-  if (mappedInput.wasAnyPressed() || mappedInput.wasScreenTouchDown(x, y)) {
+  if (mappedInput.wasPressed(MappedInputManager::Button::Up) || mappedInput.wasPressed(MappedInputManager::Button::Down) ||
+      mappedInput.wasScreenTouchDown(x, y)) {
     if (pollInterval() != config.pollMs) lastPollMs = 0;  // waking from idle: poll now
     lastActiveMs = millis();
   }
