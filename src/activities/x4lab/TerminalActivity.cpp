@@ -256,7 +256,12 @@ void TerminalActivity::handleInput() {
   int y = 0;
   if (state != SHOWING || !mappedInput.wasScreenTapped(x, y)) return;
   const int top = renderer.getScreenHeight() - BAR_ROWS * BAR_ROW_H;
-  if (y < top) return;
+  if (y < top) {
+    // Above the bar the bridge owns the layout (session tabs): forward the tap.
+    char query[48];
+    snprintf(query, sizeof(query), "tap=%d,%d&orient=%s", x, y, config.orient);
+    return sendKeys(query);
+  }
   const int row = std::min((y - top) / BAR_ROW_H, BAR_ROWS - 1);
   const int col = std::min(x / (renderer.getScreenWidth() / BAR_COLS), BAR_COLS - 1);
   const char* key = BAR_KEYS[row][col];
