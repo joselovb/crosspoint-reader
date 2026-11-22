@@ -246,11 +246,12 @@ void TerminalActivity::openKeyboard() {
 
 void TerminalActivity::handleInput() {
   using Button = MappedInputManager::Button;
-  // Side buttons: Up/Down, long press = PageUp/PageDown (a long press consumes the release).
-  if (mappedInput.wasLongPressed(Button::Up, LONG_PRESS_MS)) return sendKeys("k=PageUp");
-  if (mappedInput.wasLongPressed(Button::Down, LONG_PRESS_MS)) return sendKeys("k=PageDown");
-  if (mappedInput.wasReleased(Button::Up)) return sendKeys("k=Up");
-  if (mappedInput.wasReleased(Button::Down)) return sendKeys("k=Down");
+  // Side buttons scroll the conversation (PageUp/PageDown); long press = arrow Up/Down, which
+  // in Claude's input walks history and suggestions (a long press consumes the release).
+  if (mappedInput.wasLongPressed(Button::Up, LONG_PRESS_MS)) return sendKeys("k=Up");
+  if (mappedInput.wasLongPressed(Button::Down, LONG_PRESS_MS)) return sendKeys("k=Down");
+  if (mappedInput.wasReleased(Button::Up)) return sendKeys("k=PageUp");
+  if (mappedInput.wasReleased(Button::Down)) return sendKeys("k=PageDown");
 
   int x = 0;
   int y = 0;
